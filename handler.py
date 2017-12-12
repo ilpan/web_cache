@@ -50,15 +50,18 @@ class Handler:
                     status_code = '200'
                     self.do_get_response(response_body, status_code, client_sock)       # 封装成响应报文发送给client
                 else:
-                    # 此处默认初始服务器该数据存在，只不过数据被修改了
-                    # 获取 Date 和 Last-Modified
-                    saved_date, last_modified_date = self._get_two_date(header_line)
-                    mapping_data = {
-                        'saved_date': saved_date,
-                        'last_modified_date': last_modified_date,
-                        'entity_body': response_body
-                    }
                     if b'200' in status_line:
+                        # 获取 Date 和 Last-Modified
+                        saved_date, last_modified_date = self._get_two_date(header_line)
+
+                        print('saved_date: ', saved_date)           # =================================== * 输出查看 * ==
+                        print('last_modified_date: ', last_modified_date)
+
+                        mapping_data = {
+                            'saved_date': saved_date,
+                            'last_modified_date': last_modified_date,
+                            'entity_body': response_body
+                        }
                         self.storage.mset(url_hash, mapping_data)
 
                     _, status_code, _ = status_line.split(b' ', 2)
@@ -74,14 +77,18 @@ class Handler:
             print('proxy_request: ', proxy_request)         # =========================================== * 输出查看 * ==
             # 4) web cache代理发送请求并获取响应结果
             status_line, header_line, response_body = self._get_response_msg(ip, port, proxy_request)
-            # 获取 Date 和 Last-Modified
-            saved_date, last_modified_date = self._get_two_date(header_line)
-            mapping_data = {
-                'saved_date': saved_date,
-                'last_modified_date': last_modified_date,
-                'entity_body': response_body
-            }
             if b'200' in status_line:
+                # 获取 Date 和 Last-Modified
+                saved_date, last_modified_date = self._get_two_date(header_line)
+
+                print('saved_date: ', saved_date)           # =========================================== * 输出查看 * ==
+                print('last_modified_date: ', last_modified_date)
+
+                mapping_data = {
+                    'saved_date': saved_date,
+                    'last_modified_date': last_modified_date,
+                    'entity_body': response_body
+                }
                 self.storage.mset(url_hash, mapping_data)
 
             # 7) 处理响应，发给client
@@ -140,6 +147,8 @@ class Handler:
             response_buf.append(data)
         conditional_request_socket.close()      # 关闭请求连接socket
         response_msg = b''.join(response_buf)
+        print('\r\n######## Func _get_response_msg ########') # ========================================= * 输出查看 * ==
+        print('response_msg: ', response_msg)                 # ========================================= * 输出查看 * ==
         response_header, response_body = response_msg.split(b'\r\n\r\n', 1)
         status_line, header_line = response_header.split(b'\r\n', 1)
         return status_line, header_line, response_body

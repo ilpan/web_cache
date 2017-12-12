@@ -58,6 +58,7 @@ class Server:
                 task.start()
             except KeyboardInterrupt:
                 print('\r\nServer stopped! Good Bye~')
+                exit()
 
     # ========== start handle request ==============================================================
     def handle_request(self, client_socket, client_addr):
