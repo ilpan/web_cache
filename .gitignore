@@ -1,0 +1,14 @@
+### Python template
+
+/.idea/*
+
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*$py.class
+
+# Installer logs
+pip-log.txt
+pip-delete-this-directory.txt
+
+# Sphinx documentation
+docs/_build/

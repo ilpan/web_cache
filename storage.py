@@ -3,10 +3,11 @@
 
 import redis
 
+
 class Storage:
-    '''
-    func: 用于web cache的存储，存储元素包括url_hash, saved_date, last_modified_date, entity_body
-    '''
+    """
+    func: 用于web cache的存储，存储元素包括url_hash, saved_date, last_modified, response_body
+    """
 
     def __init__(self, *address):
         self.host, self.port = address
@@ -23,7 +24,7 @@ class Storage:
     def update(self, key, field, value):
         self.set(key, field, value)
 
-    def mget(self, key, *field): # 可细化
+    def mget(self, key, *field):  # 可细化
         return self.r.hmget(key, *field)
 
     def mset(self, key, mapping):
@@ -31,3 +32,8 @@ class Storage:
 
     def exists(self, key):
         return self.r.exists(key)
+
+
+def get_storage():
+    storage = Storage('0.0.0.0', 6379)
+    return storage

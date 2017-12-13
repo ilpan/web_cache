@@ -1,0 +1,109 @@
+#!/usr/bin/env python
+# -*- coding:utf-8 -*-
+
+import gzip
+import hashlib
+import zlib
+
+"""
+这里存放一些与通信无关的方法
+"""
+
+
+# =============================== some get methods ====================================
+# 解析请求报文
+def get_request_info(request_msg):
+    request_line, header_lines, request_body = get_msg_info(request_msg)
+    return request_line, header_lines, request_body
+
+
+# 解析响应报文
+def get_response_info(response_msg):
+    status_line, header_lines, response_body = get_msg_info(response_msg)
+    content_encoding = get_content_encoding(header_lines)
+    response_body = do_resolve_response_body(content_encoding, response_body)
+    return status_line, header_lines, response_body
+
+
+# 解析报文
+def get_msg_info(msg):
+    first, entity_body = msg.split(b'\r\n\r\n', 1)
+    first_line, header = first.split(b'\r\n', 1)
+    return first_line, header, entity_body
+
+
+# 获得HTTP的请求方法
+def get_request_method(request_msg):
+    status_line, _ = request_msg.split(b'\r\n', 1)
+    request_method, _ = status_line.split(b' ', 1)
+    return request_method
+# =========================================== 解析整体报文结束 ==============================================
+
+
+# 获取 url
+def get_url(status_line):
+    _, url, _ = status_line.split()
+    return url
+
+
+# 获得服务器返回报文实体的压缩格式
+def get_content_encoding(header):
+    content_encoding = ''
+    header_lines = header.split(b'\r\n')
+    for header_line in header_lines:
+        if header_line.startswith(b'Content-Encoding'):
+            _, content_encoding = header_line.split(b' ', 1)
+            break
+    return content_encoding
+
+
+# 用于代理向初始服务其发起请求，获得初始服务器的地址信息
+def get_host_addr(header):
+    host = ''
+    header_lines = header.split(b'\r\n')
+    for header_line in header_lines:
+        h_tmp = header_line.decode('utf-8')
+        if h_tmp.startswith('Host'):
+            _, host = h_tmp.split()     # 该host type为str
+            break
+    try:
+        ip, port = host.split(':')
+    except ValueError:
+        ip, port = host, 80
+
+    return host, ip, int(port)
+
+
+# ================================ some do method ====================================
+# 解压缩服务器的响应实体
+def do_resolve_response_body(content_encoding, response_body):
+    if not content_encoding:
+        return response_body
+    else:
+        decompress = {
+            b'gzip': _do_gzip,
+            b'deflate': _do_deflate
+        }
+        return decompress[content_encoding](response_body)
+
+
+def _do_gzip(response_body):
+    return gzip.decompress(response_body)
+
+
+def _do_deflate(response_body):
+    resolved_response_body = ''
+    try:
+        resolved_response_body = zlib.decompress(response_body, -zlib.MAX_WBITS)
+    except zlib.error:
+        resolved_response_body = zlib.decompress(response_body)
+    return resolved_response_body
+# ======================================== 解压缩结束 ====================================================
+
+
+# ========================================= 与报文无关类 =================================================
+# 获取hash值
+def get_hash(url):
+    sha1 = hashlib.sha1()
+    sha1.update(url)
+    return sha1.hexdigest()     # 该算法的结果有160bit，则共有2^160，很难重复
