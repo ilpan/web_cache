@@ -12,6 +12,7 @@
 from datetime import datetime
 import socket
 
+from handler.util import get_request_info, get_host_addr
 from storage import get_storage
 
 GMT_FORMAT = '%a, %d %b %Y %H:%M:%S GMT'
@@ -127,3 +128,18 @@ def get_response_msg(initial_ip, initial_port, request_msg):
     response_msg = b''.join(response_data)
 
     return response_msg
+
+
+def handle_other(client_sock, request_msg):
+    """
+    :param client_sock: 用于向客户端发会初始服务器的响应报文
+    :param request_msg: 客户端的请求报文
+    :return: 用于处理无需缓存响应实体的请求方法
+    """
+    # 1) 获得初始服务器的地址
+    _, header_lines, _ = get_request_info(request_msg)
+    _, ip, port = get_host_addr(header_lines)
+    # 2) 获得响应报文
+    response_msg = get_response_msg(ip, port, request_msg)
+    # 3) 对客户端返回响应报文
+    do_response(response_msg, client_sock)

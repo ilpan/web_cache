@@ -4,7 +4,7 @@
 @author  : ilpan
 @contact : pna.dev@outlook.com
 @file    : handle_get.py
-@desc    :
+@desc    : GET: 用于获取资源，对于可缓存的则缓存
 @time    : 17-12-12 下午8:12
 """
 
@@ -21,6 +21,11 @@ GMT_FORMAT = '%a, %d %b %Y %H:%M:%S GMT'
 
 
 def handle_get(client_sock, request_msg):
+    """
+    :param client_sock: 用于向客户端发送响应
+    :param request_msg: 客户端的请求报文
+    :return: 在http的请求访问中，基本只有GET获取到的实体部分需要缓存，对于其他方法，无特殊要求则无需缓存（好爽）
+    """
 
     print('\r\n######## Func handle_get ########')      # =========================================== * 输出查看 * ==
 
