@@ -21,9 +21,5 @@ def handle_head(client_sock, request_msg):
 
     response_msg = get_response_msg(ip, port, request_msg)
 
-    status_line, header, _ = get_msg_info(response_msg)
-
-    proxy_response_msg = status_line+header_lines
-
-    do_response(proxy_response_msg, client_sock)
+    do_response(response_msg, client_sock)
 
