@@ -43,17 +43,8 @@ class Server:
     def handle_request(self, client_sock, client_addr):
         # 该http请求报文是encode的，此处默认请求报文小于1k
         request_msg = client_sock.recv(1024)
-        request_msg = self.get_new_request_msg(request_msg)
         print('\r\n######## Func handle_request ########')  # =========================================== * 输出查看 * ==
         print('request_msg: ', request_msg)                 # =========================================== * 输出查看 * ==
         self.handler.handle(client_sock=client_sock, request_msg=request_msg)
 
-    # 暂时性的，为了能够获取数据方便，使用短暂连接
-    @staticmethod
-    def get_new_request_msg(request_msg):
-        from handler.util import get_request_info
-        _, header, _ = get_request_info(request_msg)
-        new_request_msg = request_msg
-        if b'Connection: keep-alive' in header:
-            new_request_msg = request_msg.replace(b'Connection: keep-alive', b'Connection: close', 1)
-        return new_request_msg
+

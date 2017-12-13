@@ -48,5 +48,16 @@ class Handler:
         }
 
     def handle(self, client_sock, request_msg):
+        request_msg = self.get_new_request_msg(request_msg)
         request_method = get_request_method(request_msg)
         self.handler[request_method](client_sock=client_sock, request_msg=request_msg)
+
+    # 暂时性的，为了能够获取数据方便，使用短暂连接
+    @staticmethod
+    def get_new_request_msg(request_msg):
+        from handler.util import get_request_info
+        _, header, _ = get_request_info(request_msg)
+        new_request_msg = request_msg
+        if b'Connection: keep-alive' in header:
+            new_request_msg = request_msg.replace(b'Connection: keep-alive', b'Connection: close', 1)
+        return new_request_msg
