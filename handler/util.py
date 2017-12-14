@@ -20,6 +20,7 @@ def get_request_info(request_msg):
 
 # 解析响应报文
 def get_response_info(response_msg):
+   # print('\r\n ################## Func get_response_info #################')
     response_header, response_body = get_msg_info(response_msg)
     status_line, header_lines =  response_header.split(b'\r\n', 1)
     content_encoding = get_content_encoding(header_lines)

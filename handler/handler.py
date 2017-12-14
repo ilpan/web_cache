@@ -4,7 +4,8 @@
 @author  : ilpan
 @contact : pna.dev@outlook.com
 @file    : handle_get.py
-@desc    :
+@desc    : 根据请求方法，选择合适的处理器来处理
+    （插一句，目前为止，经过各种测试，发现出现错误的原因是因为该web_cache未支持https，即需实现handle_connect）
 @time    : 17-12-12 下午8:12
 """
 
