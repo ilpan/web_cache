@@ -52,7 +52,7 @@ class Handler:
         }
 
     def handle(self, client_sock, request_msg):
-        request_msg = self.get_new_request_msg(request_msg)
+        #request_msg = self.get_new_request_msg(request_msg)
         request_method = get_request_method(request_msg)
         self.handler[request_method](client_sock=client_sock, request_msg=request_msg)
 

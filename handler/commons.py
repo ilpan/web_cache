@@ -12,7 +12,7 @@
 from datetime import datetime
 import socket
 
-from handler.util import get_request_info, get_host_addr
+from handler.util import get_request_info, get_host_addr, get_request_method
 from storage import get_storage
 
 GMT_FORMAT = '%a, %d %b %Y %H:%M:%S GMT'
@@ -116,17 +116,46 @@ def get_response_msg(initial_ip, initial_port, request_msg):
     """
     request_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     request_socket.connect((initial_ip, initial_port))
-    request_socket.sendall(request_msg)
+    request_method = get_request_method(request_msg)
+    head_request_msg = request_msg.replace(request_method, b'HEAD', 1)
+    request_socket.sendall(head_request_msg)
+    # 此处默认头部信息小于2k
+    header_res = request_socket.recv(2048)
+    # 获得需要的信息：Content-Length（or 动态：Transfer-Encoding）
+    _header = header_res.split(b'\r\n')
+    content_length = 0
+    header_length = len(header_res)
+    for header_line in _header:
+        if header_line.startswith(b'Transfer-Encoding'):
+            fields = header_line.split(b' ')
+            type = int(fields[-1])
+            print('Transfer-Encoding Type: ', type)
+        elif header_line.startswith(b'Content-Length'):
+            fields = header_line.split(b' ')
+            content_length = int(fields[-1])
     # 接收响应
     response_data = []
-    while True:
+    # 1）接收header
+    request_socket.sendall(request_msg)
+    header = request_socket.recv(header_length)     # 此处默认成功的返回请求的header大小一样
+    response_data.append(header)
+    print('\r\nheader: ', header)
+    # 2) 接受实体部分
+    recv_length = 0
+    while recv_length < content_length:
         data = request_socket.recv(1024)
-        if not data:
-            break
+        print('data: ', data)
         response_data.append(data)
-    request_socket.close()      # 关闭请求连接socket
-    response_msg = b''.join(response_data)
+        recv_length += 1024
+        print('recv_length: ', recv_length)
+    # 3) 关闭请求连接socket
+    request_socket.close()
 
+    print('content_length: ', content_length)
+    print('recv_length: ', recv_length)
+
+    response_msg = b''.join(response_data)
+    print('response_msg: ', response_msg)
     return response_msg
 
 
