@@ -15,6 +15,8 @@ from .handle_head import handle_head
 from .handle_put import handle_put
 from .handle_delete import handle_delete
 from .handle_connect import handle_connect
+from .handle_trace import handle_trace
+from .handle_options import handle_options
 
 from .util import get_request_method
 
@@ -44,7 +46,9 @@ class Handler:
             b'HEAD': handle_head,
             b'PUT': handle_put,
             b'DELETE': handle_delete,
-            b'CONNECT': handle_connect
+            b'CONNECT': handle_connect,
+            b'TRACE': handle_trace,
+            b'OPTIONS': handle_options,
         }
 
     def handle(self, client_sock, request_msg):
@@ -55,9 +59,13 @@ class Handler:
     # 暂时性的，为了能够获取数据方便，使用短暂连接
     @staticmethod
     def get_new_request_msg(request_msg):
-        from handler.util import get_request_info
-        _, header, _ = get_request_info(request_msg)
-        new_request_msg = request_msg
-        if b'Connection: keep-alive' in header:
-            new_request_msg = request_msg.replace(b'Connection: keep-alive', b'Connection: close', 1)
+        try:
+            from handler.util import get_request_info
+            _, header, _ = get_request_info(request_msg)
+            if b'Connection: keep-alive' in header:
+                new_request_msg = request_msg.replace(b'Connection: keep-alive', b'Connection: close', 1)
+            else:
+                new_request_msg = request_msg
+        except ValueError:
+            new_request_msg = request_msg
         return new_request_msg

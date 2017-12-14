@@ -69,7 +69,7 @@ def do_response(response_msg, client_sock):
     :return: 将响应报文response_msg发给客户端
     """
 
-    print('\r\n######## Func do_get_response ########')   # ========================================= * 输出查看 * ==
+    print('\r\n######## Func do_response ########')   # ========================================= * 输出查看 * ==
     print('client_sock: ', client_sock)
 
     # 发送响应报文

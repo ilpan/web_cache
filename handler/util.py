@@ -13,13 +13,15 @@ import zlib
 # =============================== some get methods ====================================
 # 解析请求报文
 def get_request_info(request_msg):
-    request_line, header_lines, request_body = get_msg_info(request_msg)
+    request_header, request_body = get_msg_info(request_msg)
+    request_line, header_lines = request_header.split(b'\r\n', 1)
     return request_line, header_lines, request_body
 
 
 # 解析响应报文
 def get_response_info(response_msg):
-    status_line, header_lines, response_body = get_msg_info(response_msg)
+    response_header, response_body = get_msg_info(response_msg)
+    status_line, header_lines =  response_header.split(b'\r\n', 1)
     content_encoding = get_content_encoding(header_lines)
     response_body = do_resolve_response_body(content_encoding, response_body)
     return status_line, header_lines, response_body
@@ -27,9 +29,8 @@ def get_response_info(response_msg):
 
 # 解析报文
 def get_msg_info(msg):
-    first, entity_body = msg.split(b'\r\n\r\n', 1)
-    first_line, header = first.split(b'\r\n', 1)
-    return first_line, header, entity_body
+    msg_header, msg_body = msg.split(b'\r\n\r\n', 1)
+    return msg_header, msg_body
 
 
 # 获得HTTP的请求方法
@@ -66,12 +67,15 @@ def get_host_addr(header):
         if h_tmp.startswith('Host'):
             _, host = h_tmp.split()     # 该host type为str
             break
+    ip, port = get_addr(host)
+    return host, ip, port
+
+def get_addr(host):
     try:
         ip, port = host.split(':')
     except ValueError:
         ip, port = host, 80
-
-    return host, ip, int(port)
+    return ip, int(port)
 
 
 # ================================ some do method ====================================
