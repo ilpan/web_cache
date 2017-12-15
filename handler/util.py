@@ -23,7 +23,7 @@ def get_response_info(response_msg):
    # print('\r\n ################## Func get_response_info #################')
     response_header, response_body = get_msg_info(response_msg)
     status_line, header_lines =  response_header.split(b'\r\n', 1)
-    content_encoding = get_content_encoding(header_lines)
+    content_encoding = get_value_by_filed(header_lines, b'Content-Encoding')
     response_body = do_resolve_response_body(content_encoding, response_body)
     return status_line, header_lines, response_body
 
@@ -48,15 +48,15 @@ def get_url(status_line):
     return url
 
 
-# 获得服务器返回报文实体的压缩格式
-def get_content_encoding(header):
-    content_encoding = ''
+# 获得服务器返回报文实体中与field对应的value
+def get_value_by_filed(header, filed):
+    value = ''
     header_lines = header.split(b'\r\n')
     for header_line in header_lines:
-        if header_line.startswith(b'Content-Encoding'):
-            _, content_encoding = header_line.split(b' ', 1)
+        if header_line.startswith(filed):
+            _, value = header_line.split(b' ', 1)
             break
-    return content_encoding
+    return value
 
 
 # 用于代理向初始服务其发起请求，获得初始服务器的地址信息

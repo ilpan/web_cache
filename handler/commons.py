@@ -12,7 +12,7 @@
 from datetime import datetime
 import socket
 
-from handler.util import get_request_info, get_host_addr, get_request_method
+from handler.util import get_request_info, get_host_addr, get_request_method, get_value_by_filed
 from storage import get_storage
 
 GMT_FORMAT = '%a, %d %b %Y %H:%M:%S GMT'
@@ -59,7 +59,9 @@ def do_200_response_actions(url_hash, header_lines, response_body, client_sock):
     # 首要的是先返回给客户端数据
     # TODO: 此处设计到两处不同的IO，可异步处理
     do_success_response(response_body, client_sock)
-    storage.mset(url_hash, mapping_data)
+
+    if saved_date and last_modified_date and response_body:
+        storage.mset(url_hash, mapping_data)
 
 
 def do_response(response_msg, client_sock):
@@ -125,57 +127,81 @@ def get_response_msg(initial_ip, initial_port, request_msg):
     # 此处默认头部信息小于8k
     header_res = request_socket.recv(8192)
     print('header_res: ', header_res)
-    # 获得需要的信息：Content-Length（or 动态：Transfer-Encoding）
-    _header = header_res.split(b'\r\n')
-
-    request_socket.close()
-
-    request_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    request_socket.connect((initial_ip, initial_port))
 
     # 发送正式的请求报文
     request_socket.sendall(request_msg)
     # 接收响应
     response_data = []
 
-    for header_line in _header:
-        if header_line.startswith(b'Transfer-Encoding'):
-            # fields = header_line.split(b' ')
-            # if fields[-1] == b'chunked':    # 目前为止应该就这一种传输编码，加个判断防止以后有变
-                # 每个chunk分为头部和正文，对应于最后一个chunk其头部为0，正文为空
-            while True:
-                data = request_socket.recv(1024)
-                response_data.append(data)
-                if data.endswith(b'\r\n0\r\n\r\n'):
-                    break
-            break
-        elif header_line.startswith(b'Content-Length'):
-            content_length = 0
+    '''
+    ### 经过测试发现，当使用head请求时若报文中既无C-L又无T-E，则使用get时报文中会有T-E
+    ### 所以对于GET报文中C-L和T-E两者必存在一个，不会同时存在或者同时不存在
+    ### 注意到，该方法对于handle_other也有调用，即对于其他报文，可能以上两者都无
+    if b'Content-Length' not in header_res:
+        if b'Transfer-Encoding' not in header_res:
+            print('=============Process Here: not wished===============')
             header_length = len(header_res)
-            print('\r\nheader_length: ', header_length)
-            fields = header_line.split(b' ')
-            content_length = int(fields[-1])
-            # 1）接收header
-            header = request_socket.recv(header_length)     # 此处默认成功的返回请求的header大小一样
-            response_data.append(header)
-            print('\r\nheader: ', header)
-            # 2) 接受实体部分
-            recv_length = 0
-            while recv_length < content_length:
-                data = request_socket.recv(1024)
-                print('data: ', data)
-                response_data.append(data)
-                recv_length += 1024
-            # ================ 输出查看 ================
-            print('content_length: ', content_length)
-            print('recv_length: ', recv_length)
-            break
+            data =  request_socket.recv(header_length)
+            response_data.append(data)
+            print('Not Wished Response_data: ', data)
+    '''
+
+    if b'Content-Length' in header_res:
+        header_length = len(header_res)
+        print('\r\nheader_length: ', header_length)
+        content_length = int(get_value_by_filed(header_res, b'Content-Length'))
+        # 1）接收header
+        header = request_socket.recv(header_length)     # 此处默认成功的返回请求的header大小一样
+        response_data.append(header)
+        print('\r\nheader: ', header)
+        # 2) 接受实体部分
+        recv_content_length = 0
+        recv_size = 1024 if content_length < 8192 else 8192
+        while recv_content_length < content_length:
+            data = request_socket.recv(recv_size)
+            print('CL-Data: ', data)
+            response_data.append(data)
+            recv_content_length += 1024
+        # ================ 输出查看 ================
+        print('content_length: ', content_length)
+        print('recv_content_length: ', recv_content_length)
+    else:
+        # 数据采用分块传输, 目前为止应该就'chunked'一种传输编码
+        # 每个chunk分为头部和正文，对应于最后一个chunk其头部为0，正文为空
+        while True:
+            data = request_socket.recv(8192)
+            #if not data:
+            #    break       # 不是T-E也不是C-L，“不明情况”
+            print('TE-Data: ', data)
+            response_data.append(data)
+            if data.endswith(b'\r\n0\r\n\r\n'):
+                break
+
     # 关闭请求连接socket
     request_socket.close()
 
-
     response_msg = b''.join(response_data)
     print('response_msg: ', response_msg)
+
+    # 重新组装response_msg
+    if b'Transfer-Encoding' in response_msg:
+        response_header, response_body = response_msg.split(b'\r\n\r\n' ,1)
+        res_body_list = response_body.split(b'\r\n')
+        print('response_body in T-E1: ', response_body)
+        print('res_body_list in T-E: ', res_body_list)
+        res_body_data = []
+        body_len = len(res_body_list)
+        print('body_len in T-E: ', body_len)
+        for i in range(0, body_len, 2):
+            chunk = res_body_list[i+1]
+            if int(res_body_list[i], 16) == 0:
+           # if not chunk:
+                break
+            res_body_data.append(chunk)
+        response_body = b''.join(res_body_data)
+        print('response_body in T-E2: ', response_body)
+        response_msg = response_header + b'\r\n\r\n' + response_body
+
     return response_msg
 
 
