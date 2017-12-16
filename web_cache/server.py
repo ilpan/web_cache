@@ -43,7 +43,9 @@ class Server:
     def handle_request(self, client_sock, client_addr):
         # 该http请求报文是encode的，此处默认请求报文小于1k
         request_msg = client_sock.recv(1024)
-        print('\r\n######## Func handle_request ########')  # =========================================== * 输出查看 * ==
+        if not request_msg:
+            return
+        print('\r\n######## Func handle_request from {}########'.format(client_addr)) # ================= * 输出查看 * ==
         print('request_msg: ', request_msg)                 # =========================================== * 输出查看 * ==
         self.handler.handle(client_sock=client_sock, request_msg=request_msg)
 

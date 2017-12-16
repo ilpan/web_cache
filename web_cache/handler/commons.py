@@ -16,7 +16,7 @@ from .util import get_request_info, get_host_addr, get_request_method, get_value
 from web_cache.storage import get_storage
 
 GMT_FORMAT = '%a, %d %b %Y %H:%M:%S GMT'
-
+MTU = 65535
 
 # ===================================== 与web cache相关 ==========================================================
 def do_200_response_actions(url_hash, header_lines, response_body, client_sock):
@@ -119,6 +119,12 @@ def _make_response_header():
 # ===================================== 与初始服务器有关联 =========================================================
 # TODO:对于错误异常情况，可以稍后自定义一个错误报文
 def get_response_msg(initial_ip, initial_port, request_msg):
+    request_method = get_request_method(request_msg)
+    return get_response_msg_for_GET(initial_ip, initial_port, request_msg) if request_method==b'GET' \
+        else get_response_msg_for_other(initial_ip, initial_port, request_msg)
+
+
+def get_response_msg_for_GET(initial_ip, initial_port, request_msg):
     """
     :param initial_ip: 初始服务器的ip或者域名
     :param initial_port: 初始服务器的端口
@@ -165,12 +171,13 @@ def get_response_msg(initial_ip, initial_port, request_msg):
         print('\r\nheader: ', header)
         # 2) 接受实体部分
         recv_content_length = 0
-        recv_size = 1024 if content_length < 8192 else 8192
+        # recv_size = 1024 if content_length < 8192 else 8192
+        recv_size = MTU
         while recv_content_length < content_length:
             data = request_socket.recv(recv_size)
             print('CL-Data: ', data)
             response_data.append(data)
-            recv_content_length += 1024
+            recv_content_length += recv_size
         # ================ 输出查看 ================
         print('content_length: ', content_length)
         print('recv_content_length: ', recv_content_length)
@@ -178,9 +185,9 @@ def get_response_msg(initial_ip, initial_port, request_msg):
         # 数据采用分块传输, 目前为止应该就'chunked'一种传输编码
         # 每个chunk分为头部和正文，对应于最后一个chunk其头部为0，正文为空
         while True:
-            data = request_socket.recv(8192)
-            #if not data:
-            #    break       # 不是T-E也不是C-L，“不明情况”
+            data = request_socket.recv(MTU)
+            if not data:
+                break       # 不是T-E也不是C-L，“不明情况”
             print('TE-Data: ', data)
             response_data.append(data)
             if data.endswith(b'\r\n0\r\n\r\n'):
@@ -203,14 +210,33 @@ def get_response_msg(initial_ip, initial_port, request_msg):
         print('body_len in T-E: ', body_len)
         for i in range(0, body_len, 2):
             chunk = res_body_list[i+1]
-            if int(res_body_list[i], 16) == 0:
-           # if not chunk:
-                break
+            try:
+                if int(res_body_list[i], 16) == 0:
+                # if not chunk:
+                    break
+            except ValueError:
+                # 可能有些报文里包含'\r\n'
+                res_body_data.append(res_body_list[i])
             res_body_data.append(chunk)
         response_body = b''.join(res_body_data)
         print('response_body in T-E2: ', response_body)
         response_msg = response_header + b'\r\n\r\n' + response_body
 
+    return response_msg
+
+
+def get_response_msg_for_other(initial_ip, initial_port, request_msg):
+    request_sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    request_sock.connect((initial_ip, initial_port))
+    request_sock.sendall(request_msg)
+    # 由于其他报文被改为采用close方式连接，故可采用如下方式接收报文
+    response_buf = []
+    while True:
+        data = request_sock.recv(1024)
+        if not data:
+            break
+        response_buf.append(data)
+    response_msg = b''.join(response_buf)
     return response_msg
 
 
@@ -224,6 +250,6 @@ def handle_other(client_sock, request_msg):
     _, header_lines, _ = get_request_info(request_msg)
     _, ip, port = get_host_addr(header_lines)
     # 2) 获得响应报文
-    response_msg = get_response_msg(ip, port, request_msg)
+    response_msg = get_response_msg_for_other(ip, port, request_msg)
     # 3) 对客户端返回响应报文
     do_response(response_msg, client_sock)

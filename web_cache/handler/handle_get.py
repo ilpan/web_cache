@@ -99,6 +99,14 @@ def do_conditional_request(url, host, Etag, last_modified_date):
 
 
 def _make_conditional_get_msg(url, host, Etag, last_modified_date):
+    """
+    :param url: 资源url
+    :param host: 初始服务器的地址
+    :param Etag: 用于组装条件get报文（经过测试访问一些网站获取资源，发现有些ETag为空，
+                        但是考虑到大多数资源都有ETag唯一标识，就不再单独考虑了）
+    :param last_modified_date: 功能同上
+    :return:
+    """
     conditional_get_data = []
     conditional_get_request_line = 'GET {} HTTP/1.1\r\n'.format(url.decode('utf-8')).encode('utf-8')
     conditional_get_header_lines = 'Host: {}\r\nConnection: close\r\n' \

@@ -28,6 +28,8 @@ def handle_connect(client_sock, request_msg):
 
     # 自定义实现一个报文，表明暂未实现该方法
     header = _make_response_header()
-    body = b'<H1>Handle Connect Coming Soon......<H1>'
-    response_msg = header +b'\r\n\r\n' + body
+    body = b'<html>\r\n<head><title>handle_connect coming soon...</title></head>\r\n' \
+           b'<body bgcolor="white">\r\n<center><h1>CONNECT is not suooprted yet, but will come...</h1></center>\r\n' \
+           b'</body>\r\n</html>\r\n'
+    response_msg = header + body
     do_response(response_msg, client_sock)

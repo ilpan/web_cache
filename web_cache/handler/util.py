@@ -53,7 +53,7 @@ def get_url(status_line):
 
 # 获得服务器返回报文实体中与field对应的value
 def get_value_by_filed(header, filed):
-    value = ''
+    value = b''
     header_lines = header.split(b'\r\n')
     for header_line in header_lines:
         if header_line.startswith(filed):
