@@ -9,7 +9,7 @@
             This can be used to check the functionality of a web server by requesting '*' instead of a specific resource.
 @time    : 17-12-14 下午1:14 
 """
-from handler.commons import handle_other
+from .commons import handle_other
 
 
 def handle_options(client_sock, request_msg):

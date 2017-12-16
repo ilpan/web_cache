@@ -7,7 +7,7 @@
 @desc    : HEAD请求，不要求获得实体部分，故web cache只需做个转发响应就行，无需对数据存储
 @time    : 17-12-12 下午8:16 
 """
-from handler.commons import handle_other
+from .commons import handle_other
 
 
 def handle_head(client_sock, request_msg):

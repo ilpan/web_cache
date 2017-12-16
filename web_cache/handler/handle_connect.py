@@ -8,7 +8,7 @@
 @time    : 17-12-12 下午8:16
 '''
 
-from .commons import get_response_msg, do_response
+from .commons import get_response_msg, do_response, _make_response_header
 from .util import get_request_info, get_addr
 
 def handle_connect(client_sock, request_msg):
@@ -26,4 +26,8 @@ def handle_connect(client_sock, request_msg):
     # 输出查看
     print('response_msg: ', response_msg)
 
+    # 自定义实现一个报文，表明暂未实现该方法
+    header = _make_response_header()
+    body = b'<H1>Handle Connect Coming Soon......<H1>'
+    response_msg = header +b'\r\n\r\n' + body
     do_response(response_msg, client_sock)

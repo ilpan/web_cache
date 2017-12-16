@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-from server import Server
+from web_cache.server import Server
 
 def main():
     server = Server('0.0.0.0', 6666)

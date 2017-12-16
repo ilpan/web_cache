@@ -14,7 +14,7 @@ from .commons import do_response, do_success_response, do_200_response_actions
 from .commons import get_response_msg
 from .util import *
 
-from storage import get_storage
+from web_cache.storage import get_storage
 
 
 GMT_FORMAT = '%a, %d %b %Y %H:%M:%S GMT'
@@ -54,10 +54,10 @@ def handle_get(client_sock, request_msg):
             do_success_response(response_body, client_sock)
         # 2) 若超过有效期，则使用条件GET请求
         else:
+            ETag = storage.get(url_hash, 'ETag')
             last_modified_date = storage.get(url_hash, 'last_modified')
-            proxy_conditional_request = _make_conditional_get_msg(url, host, last_modified_date)
-            # 发送该请求并获得响应结果
-            response_msg = get_response_msg(ip, port, proxy_conditional_request)
+            # 此处将 ETag 和 Last-Modified合起考虑，不做单独区分了
+            response_msg = do_conditional_request(url, host, ETag, last_modified_date)
             status_line, header_lines, response_body = get_request_info(response_msg)
             # 对响应做出分析
             # 若初始服务器数据未修改
@@ -91,15 +91,19 @@ def handle_get(client_sock, request_msg):
 
 
 # ======================================= some supporting methods ==================================================
-def do_conditional_request():
-    pass
+def do_conditional_request(url, host, Etag, last_modified_date):
+    conditional_get_msg = _make_conditional_get_msg(url, host, Etag, last_modified_date)
+    ip, port = get_addr(host)
+    response_msg = get_response_msg(ip, port, conditional_get_msg)
+    return response_msg
 
 
-def _make_conditional_get_msg(url, host, last_modified_date):
+def _make_conditional_get_msg(url, host, Etag, last_modified_date):
     conditional_get_data = []
     conditional_get_request_line = 'GET {} HTTP/1.1\r\n'.format(url.decode('utf-8')).encode('utf-8')
     conditional_get_header_lines = 'Host: {}\r\nConnection: close\r\n' \
-                    'If-modified-since: {}\r\n\r\n'.format(host, last_modified_date.decode('utf-8')).encode('utf-8')
+                                   'If-None_Match: {}\r\nIf-modified-since: {}\r\n\r\n'.\
+                                    format(host, Etag, last_modified_date.decode('utf-8')).encode('utf-8')
     conditional_get_data.append(conditional_get_request_line)
     conditional_get_data.append(conditional_get_header_lines)
     proxy_conditional_get_request = b''.join(conditional_get_data)

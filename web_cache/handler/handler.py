@@ -53,15 +53,16 @@ class Handler:
         }
 
     def handle(self, client_sock, request_msg):
-        #request_msg = self.get_new_request_msg(request_msg)
         request_method = get_request_method(request_msg)
+        # 此处做个改变，只有GET保持原有的Connection值
+        request_msg = request_msg if request_method==b'GET' else self.get_new_request_msg(request_msg)
         self.handler[request_method](client_sock=client_sock, request_msg=request_msg)
 
     # 暂时性的，为了能够获取数据方便，使用短暂连接
     @staticmethod
     def get_new_request_msg(request_msg):
         try:
-            from handler.util import get_request_info
+            from .util import get_request_info
             _, header, _ = get_request_info(request_msg)
             if b'Connection: keep-alive' in header:
                 new_request_msg = request_msg.replace(b'Connection: keep-alive', b'Connection: close', 1)

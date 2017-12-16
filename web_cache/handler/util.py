@@ -30,7 +30,10 @@ def get_response_info(response_msg):
 
 # 解析报文
 def get_msg_info(msg):
-    msg_header, msg_body = msg.split(b'\r\n\r\n', 1)
+    try:
+        msg_header, msg_body = msg.split(b'\r\n\r\n', 1)
+    except ValueError:
+        msg_header, msg_body = msg, b''
     return msg_header, msg_body
 
 

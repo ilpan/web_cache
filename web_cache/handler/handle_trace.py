@@ -9,7 +9,7 @@
             or additions have been made by intermediate servers.
 @time    : 17-12-14 下午1:13 
 """
-from handler.commons import handle_other
+from .commons import handle_other
 
 
 def handle_trace(client_sock, request_msg):

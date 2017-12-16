@@ -4,7 +4,7 @@
 import socket
 import threading
 
-from handler.handler import Handler
+from web_cache.handler.handler import Handler
 
 
 class Server:

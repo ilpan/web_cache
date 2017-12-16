@@ -7,7 +7,7 @@
 @desc    : DELETE: 从服务器中删除URI指定的资源
 @time    : 17-12-12 下午8:16 
 """
-from handler.commons import handle_other
+from .commons import handle_other
 
 
 def handle_delete(client_sock, request_msg):

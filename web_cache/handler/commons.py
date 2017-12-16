@@ -12,8 +12,8 @@
 from datetime import datetime
 import socket
 
-from handler.util import get_request_info, get_host_addr, get_request_method, get_value_by_filed
-from storage import get_storage
+from .util import get_request_info, get_host_addr, get_request_method, get_value_by_filed
+from web_cache.storage import get_storage
 
 GMT_FORMAT = '%a, %d %b %Y %H:%M:%S GMT'
 
@@ -47,12 +47,16 @@ def do_200_response_actions(url_hash, header_lines, response_body, client_sock):
     storage = get_storage()
     # 获取 Date 和 Last-Modified
     saved_date, last_modified_date = _get_two_date()
+    # 获得ETag
+    ETag = get_value_by_filed(header_lines, b'ETag')
 
     print('saved_date: ', saved_date)           # =================================== * 输出查看 * ==
     print('last_modified: ', last_modified_date)
+    print('ETag: ', ETag)
 
     mapping_data = {
         'saved_date': saved_date,
+        'ETag': ETag,
         'last_modified': last_modified_date,
         'response_body': response_body
     }
@@ -60,7 +64,12 @@ def do_200_response_actions(url_hash, header_lines, response_body, client_sock):
     # TODO: 此处设计到两处不同的IO，可异步处理
     do_success_response(response_body, client_sock)
 
-    if saved_date and last_modified_date and response_body:
+    cache_control = get_value_by_filed(header_lines, b'Cache-Control')
+    if b'no-store' in cache_control:
+        # 不执行下一步缓存操作
+        return
+
+    if saved_date and ETag and last_modified_date and response_body:
         storage.mset(url_hash, mapping_data)
 
 
