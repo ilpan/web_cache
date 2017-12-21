@@ -13,7 +13,7 @@ from datetime import datetime
 import socket
 
 from .util import get_request_info, get_host_addr, get_request_method, get_value_by_filed
-from storage import get_storage
+from web_cache.storage import get_storage
 
 GMT_FORMAT = '%a, %d %b %Y %H:%M:%S GMT'
 MSS = 65536
@@ -172,7 +172,7 @@ def get_response_msg_for_GET(initial_ip, initial_port, request_msg):
         # 2) 接受实体部分
         recv_content_length = 0
         # recv_size = 1024 if content_length < 8192 else 8192
-        recv_size = MTU
+        recv_size = MSS
         while recv_content_length < content_length:
             data = request_socket.recv(recv_size)
             print('CL-Data: ', data)
@@ -185,7 +185,7 @@ def get_response_msg_for_GET(initial_ip, initial_port, request_msg):
         # 数据采用分块传输, 目前为止应该就'chunked'一种传输编码
         # 每个chunk分为头部和正文，对应于最后一个chunk其头部为0，正文为空
         while True:
-            data = request_socket.recv(MTU)
+            data = request_socket.recv(MSS)
             if not data:
                 break       # 不是T-E也不是C-L，“不明情况”
             print('TE-Data: ', data)

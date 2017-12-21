@@ -1,7 +1,16 @@
-<h1>wcache: a tool that help you store requested resources</h1>
+#web_cache
 
+web_cache or wcache, is a tool that can help you store requested resources with redis
 
-[TOC]
+Table of Contents
+=================
+
+  * [Installation](#installation)
+  * [Usage](#usage)
+  * [Architecture](#architecture)
+  * [Processing flow](#processing-flow)
+  * [References](#references)
+
 ## Installation
 `$ pip install wcache`
 
@@ -12,11 +21,11 @@
   `$ wcache [--ip IP] [--port PORT]`
 
 ## Architecture
-<img src="./architecture.png" style="zoom:85%" />
+<img src="./architecture.png" style="zoom:75%" />
 
 
 ## Processing flow
-![process](./process.png)
+<img src="./process.png" style="zoom:75%" />
 
 
 ## References

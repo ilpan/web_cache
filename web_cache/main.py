@@ -1,8 +1,8 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-from helper import Helper
-from server import Server
+from web_cache.helper import Helper
+from web_cache.server import Server
 
 def main():
     helper = Helper()

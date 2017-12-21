@@ -4,7 +4,7 @@ import web_cache
 
 
 setup(
-    name='web_cache',
+    name='wcache',
     version=web_cache.__version__,
     description=web_cache.__description__,
     author=web_cache.__author__,

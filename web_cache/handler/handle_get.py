@@ -14,7 +14,7 @@ from .commons import do_response, do_success_response, do_200_response_actions
 from .commons import get_response_msg
 from .util import *
 
-from storage import get_storage
+from web_cache.storage import get_storage
 
 
 GMT_FORMAT = '%a, %d %b %Y %H:%M:%S GMT'

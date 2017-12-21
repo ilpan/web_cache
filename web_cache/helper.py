@@ -11,7 +11,7 @@
 import argparse
 import sys
 
-from __init__ import __version__, __description__
+from web_cache import __version__, __description__
 
 
 class Helper:
