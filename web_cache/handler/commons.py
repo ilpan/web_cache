@@ -13,10 +13,10 @@ from datetime import datetime
 import socket
 
 from .util import get_request_info, get_host_addr, get_request_method, get_value_by_filed
-from web_cache.storage import get_storage
+from storage import get_storage
 
 GMT_FORMAT = '%a, %d %b %Y %H:%M:%S GMT'
-MTU = 65535
+MSS = 65536
 
 # ===================================== 与web cache相关 ==========================================================
 def do_200_response_actions(url_hash, header_lines, response_body, client_sock):
