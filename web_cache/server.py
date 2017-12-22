@@ -20,7 +20,17 @@ class Server:
         self.listen_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.listen_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
         # 绑定ip
-        self.listen_socket.bind((self.host, self.port))
+        try:
+            self.listen_socket.bind((self.host, self.port))
+        except PermissionError:
+            print('Error: Permission denied')
+            exit()
+        except OSError:
+            print('Error: Address already in use')
+            exit()
+        except Exception:
+            print('Error: Unknown!')
+            exit()
         # 监听
         self.listen_socket.listen(5)
     # ========== end init ops =====================================================================
